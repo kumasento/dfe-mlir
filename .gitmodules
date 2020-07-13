@@ -1,0 +1,6 @@
+[submodule "lib/llvm-project"]
+	path = lib/llvm-project
+	url = git@github.com:llvm/llvm-project
+[submodule "lib/googletest"]
+	path = lib/googletest
+	url = git@github.com:google/googletest

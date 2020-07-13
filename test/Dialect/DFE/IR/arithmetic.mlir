@@ -1,0 +1,3 @@
+func @check_arithmetic() -> () {
+
+}
