@@ -1,9 +1,11 @@
-#include "dfe/Dialect/DFE/IR/DFEDialect.h"
+#include "dfe/Dialect/MaxJ/IR/MaxJDialect.h"
 
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/ToolOutputFile.h"
 
+#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
+#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/AsmState.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/Pass/Pass.h"
@@ -15,6 +17,7 @@
 
 using namespace llvm;
 using namespace mlir;
+using namespace dfe;
 
 static cl::opt<std::string> inputFilename(cl::Positional,
                                           cl::desc("<input file>"),
@@ -56,8 +59,10 @@ int main(int argc, char* argv[]) {
   registerPassManagerCLOptions();
   registerAsmPrinterCLOptions();
 
-  // register the DFE dialect
-  registerDialect<dfe::DFEDialect>();
+  // register the dialects
+  registerDialect<StandardOpsDialect>();
+  registerDialect<LLVM::LLVMDialect>();
+  registerDialect<maxj::MaxJDialect>();
 
   // parse passes
   PassPipelineCLParser passPipeline("", "Compiler passes to run");

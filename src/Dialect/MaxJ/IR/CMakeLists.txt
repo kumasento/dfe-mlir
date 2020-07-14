@@ -1,11 +1,12 @@
-add_mlir_dialect_library(MLIRDFE
-  DFEDialect.cc
+add_mlir_dialect_library(MLIRMaxJ
+  MaxJDialect.cc
+  MaxJOps.cc
 
   ADDITIONAL_HEADER_DIRS
-  ${PROJECT_SOURCE_DIR}/include/Dialect/DFE
+  ${PROJECT_SOURCE_DIR}/include/Dialect/MaxJ
 
   DEPENDS
-  MLIRDFEEnumsIncGen
+  MLIRMaxJEnumsIncGen
 
   LINK_LIBS PUBLIC
   MLIREDSC

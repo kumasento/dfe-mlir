@@ -1,1 +1,1 @@
-add_subdirectory(DFE)
+add_subdirectory(MaxJ)
