@@ -1,6 +1,10 @@
 // Initialize values in MaxJ
 
-def MaxJ_ConstOp : MaxJ_Op<"const", [ConstantLike, NoSideEffect]> {
+def MaxJ_ConstOp : MaxJ_Op<"const", [
+  ConstantLike,
+  HasParent<"KernelOp">,
+  NoSideEffect
+]> {
   let summary = "Instantiate a new constant value.";
 
   let description = [{

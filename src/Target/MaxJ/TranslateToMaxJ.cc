@@ -66,6 +66,7 @@ LogicalResult MaxJPrinter::printModule(mlir::ModuleOp module) {
 
 LogicalResult MaxJPrinter::printOperation(Operation *inst,
                                           unsigned indentAmount) {
+  // ConstOp
   if (auto op = dyn_cast<maxj::ConstOp>(inst)) {
     out.PadToColumn(indentAmount);
     out << "DFEVar " << getVariableName(inst->getResult(0));
@@ -78,6 +79,42 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
     // print the value
     out << op.value().convertToDouble();
     out << ");\n";
+
+  }
+  // InputOp
+  else if (auto op = dyn_cast<maxj::InputOp>(inst)) {
+    out.PadToColumn(indentAmount);
+
+    // NOTE: this should be changed if vector is supported.
+    out << "DFEVar " << getVariableName(inst->getResult(0));
+    out << " = "
+        << "io.input(" << op.nameAttr() << ", ";
+    printSVarUnderlyingType(
+        op.getResult().getType().dyn_cast<maxj::SVarType>());
+
+    if (op.getNumOperands() >= 1) {
+      out << ", " << getVariableName(op.getOperand(0));
+    }
+
+    out << ")";
+    out << ";\n";
+  }
+  // OutputOp
+  else if (auto op = dyn_cast<maxj::OutputOp>(inst)) {
+    out.PadToColumn(indentAmount);
+
+    // NOTE: this should be changed if vector is supported.
+    out << "io.output(" << op.nameAttr() << ", "
+        << getVariableName(op.getOperand(0)) << ", ";
+    printSVarUnderlyingType(
+        op.getOperand(0).getType().dyn_cast<maxj::SVarType>());
+
+    if (op.getNumOperands() >= 2) {
+      out << ", " << getVariableName(op.getOperand(1));
+    }
+
+    out << ")";
+    out << ";\n";
   }
 }
 
@@ -89,12 +126,18 @@ Twine MaxJPrinter::getVariableName(Value value) {
   return Twine("_") + Twine(mapValueToName.lookup(value));
 }
 
+// This will convert the underlying type wrapped in a SVar
+// to a DFEType in MaxJ.
 LogicalResult MaxJPrinter::printSVarUnderlyingType(maxj::SVarType svar) {
   mlir::Type type = svar.getType();
   if (type.isIntOrFloat()) {
     unsigned w = type.getIntOrFloatBitWidth();
     if (type.isInteger(w)) {
       out << "dfeInt(" << w << ")";
+    } else if (type.isF64()) {
+      out << "dfeFloat(11, 52)";
+    } else if (type.isF32()) {
+      out << "dfeFloat(8, 23)";
     }
   }
   return success();

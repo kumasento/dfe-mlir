@@ -40,6 +40,7 @@ class MaxJ_Op<string mnemonic, list<OpTrait> traits = []> :
   let printer = [{ ::print(p, *this); }];
 }
 
+include "SVarOps.td"
 include "ValueOps.td"
 include "StructureOps.td"
 include "InterfaceOps.td"

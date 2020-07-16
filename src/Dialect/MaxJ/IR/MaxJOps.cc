@@ -96,8 +96,142 @@ static void print(OpAsmPrinter &printer, maxj::InputOp op) {
   printer << " -> " << op.getType() << "\n";
 }
 
+// ----------- OutputOp
+static ParseResult parseOutputOp(OpAsmParser &parser, OperationState &result) {
+  StringAttr outputName;
+
+  // get the name of the input exposed to the external world
+  if (parser.parseAttribute(outputName, "name", result.attributes))
+    return failure();
+
+  // the SVar to be output, parse it as an operand
+  OpAsmParser::OperandType output;
+  Type outputType;
+
+  if (parser.parseComma())
+    return failure();
+  if (parser.parseOperand(output))
+    return failure();
+  if (parser.parseColonType(outputType))
+    return failure();
+  parser.resolveOperand(output, outputType, result.operands);
+
+  // if another argument follows the name, it should be the enable SVar
+  if (succeeded(parser.parseOptionalComma())) {
+    OpAsmParser::OperandType enable;
+    Type enableType;
+
+    if (parser.parseOperand(enable))
+      return failure();
+    if (succeeded(parser.parseColonType(enableType))) {
+      if (!enableType.isa<maxj::SVarType>() ||
+          !enableType.dyn_cast<maxj::SVarType>().getType().isInteger(1))
+        parser.emitError(parser.getCurrentLocation(),
+                         "The 'enable' operand should be svar<i1>");
+    }
+
+    parser.resolveOperand(enable, enableType, result.operands);
+  }
+
+  return success();
+}
+
+static void print(OpAsmPrinter &printer, maxj::OutputOp op) {
+  printer << op.getOperationName();
+  printer << " \"" << op.getAttrOfType<StringAttr>("name").getValue() << "\"";
+
+  // print the output SVar
+  printer << ", " << op.getOperand(0) << " : " << op.getOperand(0).getType();
+
+  // print the optional enable SVar
+  if (op.getNumOperands() >= 1) {
+    printer << ", " << op.getOperand(1) << " : " << op.getOperand(0).getType();
+  }
+}
+
 // ----------- KernelOp
+
+// parse the argument list provided to a kernel.
+// (%arg0 : T0, %arg1 : T1, <...>)
+static ParseResult
+parseArgumentList(OpAsmParser &parser,
+                  SmallVectorImpl<OpAsmParser::OperandType> &args,
+                  SmallVectorImpl<Type> &argTypes) {
+
+  if (parser.parseLParen())
+    return failure();
+
+  do {
+    OpAsmParser::OperandType arg;
+    Type argType;
+
+    // extract one operand from the argument list
+    if (succeeded(parser.parseOptionalRegionArgument(arg))) {
+      if (!arg.name.empty() && succeeded(parser.parseColonType(argType))) {
+        // the parsed arg is valid.
+        args.push_back(arg);
+        argTypes.push_back(argType);
+      }
+    }
+  } while (succeeded(parser.parseOptionalComma()));
+
+  if (parser.parseRParen())
+    return failure();
+
+  return success();
+}
+
+// parse the signature for maxj.kernel
+// (%arg0 : T0, %arg1 : T1, <...>) -> (%out0 : T0, %out1 : T1, <...>)
+//
+// Although a kernel normally won't have an output value.
+static ParseResult
+parseKernelSignature(OpAsmParser &parser, OperationState &result,
+                     SmallVectorImpl<OpAsmParser::OperandType> &args,
+                     SmallVectorImpl<Type> &argTypes) {
+  if (parseArgumentList(parser, args, argTypes))
+    return failure();
+
+  // record the number of input arguments
+  // again, this might not be useful.
+  IntegerAttr insAttr = parser.getBuilder().getI64IntegerAttr(args.size());
+  result.addAttribute("ins", insAttr);
+
+  if (parser.parseArrow() || parseArgumentList(parser, args, argTypes))
+    return failure();
+
+  return success();
+}
+
 static ParseResult parseKernelOp(OpAsmParser &parser, OperationState &result) {
+  StringAttr kernelName;
+  SmallVector<OpAsmParser::OperandType, 4> args;
+  SmallVector<Type, 4> argTypes;
+
+  // get the kernel name (a symbol)
+  if (parser.parseSymbolName(kernelName, SymbolTable::getSymbolAttrName(),
+                             result.attributes))
+    return failure();
+
+  if (parseKernelSignature(parser, result, args, argTypes))
+    return failure();
+
+  // you can attach an attribute dictionary
+  if (parser.parseOptionalAttrDictWithKeyword(result.attributes))
+    return failure();
+
+  // create a type for the whole kernel.
+  // from a list of arguments to none result
+  auto type = parser.getBuilder().getFunctionType(argTypes, llvm::None);
+  // This line wraps a type into an attribute of the kernel
+  result.addAttribute(maxj::KernelOp::getTypeAttrName(), TypeAttr::get(type));
+
+  auto *body = result.addRegion();
+  // use the arguments and types from the signature to parse a region.
+  parser.parseRegion(*body, args, argTypes);
+  // if there is a terminator, we're good; if not, create a new one.
+  maxj::KernelOp::ensureTerminator(*body, parser.getBuilder(), result.location);
+
   return success();
 }
 
