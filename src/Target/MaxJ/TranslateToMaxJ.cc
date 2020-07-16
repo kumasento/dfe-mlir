@@ -92,6 +92,17 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
     printSVarBinaryArithmeticOp(inst, "+", indentAmount);
   } else if (auto op = dyn_cast<maxj::MulOp>(inst)) {
     printSVarBinaryArithmeticOp(inst, "*", indentAmount);
+  } else if (auto op = dyn_cast<maxj::CounterOp>(inst)) {
+    out.PadToColumn(indentAmount);
+
+    out << "DFEVar " << getVariableName(op.getResult()) << " = "
+        << "control.count.simpleCounter(" << op.bitWidth();
+
+    if (op.wrapPoint().hasValue()) {
+      out << ", " << op.wrapPoint();
+    }
+
+    out << ");\n";
   } else if (auto op = dyn_cast<maxj::InputOp>(inst)) {
     out.PadToColumn(indentAmount);
 
