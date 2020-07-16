@@ -28,7 +28,7 @@ include "Types.td"
 
 // ---------------------- MaxJ Operations
 
-class MaxJOp<string mnemonic, list<OpTrait> traits = []> :
+class MaxJ_Op<string mnemonic, list<OpTrait> traits = []> :
   Op<MaxJDialect, mnemonic, traits> {
   // For each MaxJ op, the following static functions need to be defined in
   // MaxJOps.cc:
@@ -41,5 +41,7 @@ class MaxJOp<string mnemonic, list<OpTrait> traits = []> :
 }
 
 include "ValueOps.td"
+include "StructureOps.td"
+include "InterfaceOps.td"
 
 #endif // DFE_DIALECT_MAXJ_IR_H 

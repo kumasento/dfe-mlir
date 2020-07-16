@@ -1,9 +1,6 @@
 #include "dfe/Dialect/MaxJ/IR/MaxJOps.h"
 #include "dfe/Dialect/MaxJ/IR/MaxJDialect.h"
 
-#include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/SmallVector.h"
-#include "llvm/ADT/StringMap.h"
 #include "mlir/Dialect/CommonFolders.h"
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/Matchers.h"
@@ -15,6 +12,9 @@
 #include "mlir/IR/Types.h"
 #include "mlir/IR/Value.h"
 #include "mlir/Support/LogicalResult.h"
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringMap.h"
 
 using namespace mlir;
 using namespace dfe;
@@ -23,18 +23,25 @@ using namespace dfe;
 
 // ----------- ConstOp
 static ParseResult parseConstOp(OpAsmParser &parser, OperationState &result) {
-  Attribute val;
+  FloatAttr val;
   Type type;
 
-  // figure out the constant value from result attributes.
+  // Note that this API will parse a value without curly brackets,
+  // i.e., not a dict-type.
+  // Also, the attribute should have a colon-type attached.
+  //
+  // parseOptionalAttrDict allows you to attach some arbitrary info,
+  // but the value attribute should always be placed as <float> `:` f64
   if (parser.parseAttribute(val, "value", result.attributes) ||
       parser.parseOptionalAttrDict(result.attributes))
     return failure();
-  if (parser.parseOptionalColon().value ||
-      !parser.parseOptionalType(type).hasValue())
-    type = val.getType();
 
-  return parser.addTypeToList(val.getType(), result.types);
+  if (parser.parseArrow())
+    return failure();
+  if (parser.parseType(type))
+    return failure();
+
+  return parser.addTypeToList(type, result.types);
 }
 
 static void print(OpAsmPrinter &printer, maxj::ConstOp op) {
@@ -44,10 +51,98 @@ static void print(OpAsmPrinter &printer, maxj::ConstOp op) {
   printer << " : " << op.getType();
 }
 
+// ----------- InputOp
+static ParseResult parseInputOp(OpAsmParser &parser, OperationState &result) {
+  if (parser.parseOptionalLParen())
+    return failure();
+
+  StringAttr inputName;
+  Type resultType;
+
+  // get the name of the input exposed to the external world
+  if (parser.parseAttribute(inputName, "name", result.attributes))
+    return failure();
+
+  // if another argument follows the name, it should be the enable SVar
+  if (succeeded(parser.parseOptionalComma())) {
+    OpAsmParser::OperandType enable;
+    Type enableType;
+
+    if (parser.parseOptionalRegionArgument(enable))
+      return failure();
+    if (parser.parseColonType(enableType))
+      return failure();
+
+    if (!enableType.isa<maxj::SVarType>() ||
+        !enableType.dyn_cast<maxj::SVarType>().getType().isInteger(1))
+      parser.emitError(parser.getCurrentLocation(),
+                       "The 'enable' operand should be svar<i1>");
+  }
+
+  if (parser.parseOptionalRParen())
+    return failure();
+
+  if (parser.parseColonType(resultType))
+    return failure();
+
+  return parser.addTypeToList(resultType, result.types);
+}
+
+static void print(OpAsmPrinter &printer, maxj::InputOp op) {
+  printer << op.getOperationName();
+}
+
+// ----------- KernelOp
+static ParseResult parseKernelOp(OpAsmParser &parser, OperationState &result) {
+  return success();
+}
+
+static void printArgumentList(OpAsmPrinter &printer,
+                              std::vector<BlockArgument> args) {
+  printer << "(";
+  llvm::interleaveComma(args, printer, [&](BlockArgument arg) {
+    printer << arg << " : " << arg.getType();
+  });
+  printer << ")";
+}
+
+static void print(OpAsmPrinter &printer, maxj::KernelOp op) {
+  auto kernelName =
+      op.getAttrOfType<StringAttr>(SymbolTable::getSymbolAttrName()).getValue();
+  printer << op.getOperationName() << " ";
+  // Why we should use a specific API for printing the symbol name?
+  printer.printSymbolName(kernelName);
+  printer << " ";
+  printArgumentList(printer, op.body().front().getArguments());
+  printer << " -> ()";
+
+  printer.printOptionalAttrDictWithKeyword(
+      op.getAttrs(),
+      /*elidedAttrs =*/{SymbolTable::getSymbolAttrName(),
+                        maxj::KernelOp::getTypeAttrName(), "ins"});
+  // what are these two false booleans stand for?
+  printer.printRegion(op.body(), false, false);
+}
+
+static LogicalResult verify(maxj::KernelOp op) { return success(); }
+
+LogicalResult maxj::KernelOp::verifyType() { return success(); }
+
+LogicalResult maxj::KernelOp::verifyBody() { return success(); }
+
+// why should we explicity say this?
+Region *maxj::KernelOp::getCallableRegion() {
+  return isExternal() ? nullptr : &getBody();
+}
+
+ArrayRef<mlir::Type> maxj::KernelOp::getCallableResults() {
+  return getType().getResults();
+}
+
 #include "dfe/Dialect/MaxJ/IR/MaxJEnums.cpp.inc"
 namespace dfe {
 namespace maxj {
 #define GET_OP_CLASSES
 #include "dfe/Dialect/MaxJ/IR/MaxJ.cpp.inc"
-}  // namespace maxj
-}  // namespace dfe
+} // namespace maxj
+} // namespace dfe

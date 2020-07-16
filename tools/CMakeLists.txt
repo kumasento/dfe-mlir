@@ -2,3 +2,4 @@
 set(LLVM_BUILD_TOOLS ON)
 
 add_subdirectory(dfe-opt)
+add_subdirectory(dfe-translate)
