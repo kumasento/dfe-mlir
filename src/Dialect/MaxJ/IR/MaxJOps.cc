@@ -97,6 +97,29 @@ static void printSVarBinaryArithmeticOp(OpAsmPrinter &printer, Operation *op) {
   printer << " : " << op->getResult(0).getType();
 }
 
+// ----------- CastOp
+static ParseResult parseCastOp(OpAsmParser &parser, OperationState &result) {
+  OpAsmParser::OperandType operand;
+  Type operandType;
+  Type resultType;
+
+  if (parser.parseOperand(operand))
+    return failure();
+  if (parser.parseColonType(operandType))
+    return failure();
+  parser.resolveOperand(operand, operandType, result.operands);
+
+  if (parser.parseArrow() || parser.parseType(resultType))
+    return failure();
+
+  return parser.addTypeToList(resultType, result.types);
+}
+
+static void print(OpAsmPrinter &printer, maxj::CastOp op) {
+  printer << op.getOperationName() << " " << op.getOperand() << " : "
+          << op.getOperand().getType() << " -> " << op.getResult().getType();
+}
+
 // ----------- InputOp
 static ParseResult parseInputOp(OpAsmParser &parser, OperationState &result) {
   StringAttr inputName;

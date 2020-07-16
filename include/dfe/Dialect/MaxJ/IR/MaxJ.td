@@ -56,6 +56,7 @@ class MaxJ_SVarBinaryArithmeticOp <string mnemonic, list<OpTrait> traits = []> :
 
 
 include "SVarOps.td"
+include "TypeOps.td"
 include "ArithmeticOps.td"
 include "ValueOps.td"
 include "StructureOps.td"
