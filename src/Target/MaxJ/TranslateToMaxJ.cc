@@ -24,6 +24,8 @@ public:
 private:
   Twine getVariableName(Value value);
 
+  LogicalResult printSVarBinaryArithmeticOp(Operation *op, StringRef opSymbol,
+                                            unsigned indentAmount = 0);
   LogicalResult printSVarUnderlyingType(maxj::SVarType svar);
 
   llvm::formatted_raw_ostream &out;
@@ -66,7 +68,6 @@ LogicalResult MaxJPrinter::printModule(mlir::ModuleOp module) {
 
 LogicalResult MaxJPrinter::printOperation(Operation *inst,
                                           unsigned indentAmount) {
-  // ConstOp
   if (auto op = dyn_cast<maxj::ConstOp>(inst)) {
     out.PadToColumn(indentAmount);
     out << "DFEVar " << getVariableName(inst->getResult(0));
@@ -80,18 +81,18 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
     out << op.value().convertToDouble();
     out << ");\n";
 
-  }
-  // SVarOp
-  else if (auto op = dyn_cast<maxj::SVarOp>(inst)) {
+  } else if (auto op = dyn_cast<maxj::SVarOp>(inst)) {
     out.PadToColumn(indentAmount);
 
     out << "DFEVar " << getVariableName(inst->getResult(0)) << " = ";
     printSVarUnderlyingType(
         op.getResult().getType().dyn_cast<maxj::SVarType>());
     out << ".newInstance(getOwner());\n";
-  }
-  // InputOp
-  else if (auto op = dyn_cast<maxj::InputOp>(inst)) {
+  } else if (auto op = dyn_cast<maxj::AddOp>(inst)) {
+    printSVarBinaryArithmeticOp(inst, "+", indentAmount);
+  } else if (auto op = dyn_cast<maxj::MulOp>(inst)) {
+    printSVarBinaryArithmeticOp(inst, "*", indentAmount);
+  } else if (auto op = dyn_cast<maxj::InputOp>(inst)) {
     out.PadToColumn(indentAmount);
 
     // NOTE: this should be changed if vector is supported.
@@ -107,9 +108,7 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
 
     out << ")";
     out << ";\n";
-  }
-  // OutputOp
-  else if (auto op = dyn_cast<maxj::OutputOp>(inst)) {
+  } else if (auto op = dyn_cast<maxj::OutputOp>(inst)) {
     out.PadToColumn(indentAmount);
 
     // NOTE: this should be changed if vector is supported.
@@ -133,6 +132,27 @@ Twine MaxJPrinter::getVariableName(Value value) {
     nextValueNum++;
   }
   return Twine("_") + Twine(mapValueToName.lookup(value));
+}
+
+LogicalResult MaxJPrinter::printSVarBinaryArithmeticOp(Operation *inst,
+                                                       StringRef opSymbol,
+                                                       unsigned indentAmount) {
+  // sanity check
+  if (inst->getNumOperands() != 2) {
+    return emitError(inst->getLoc(),
+                     "This operation should have two operands.");
+  }
+  if (inst->getNumResults() != 1) {
+    return emitError(inst->getLoc(), "This operation should have one result.");
+  }
+
+  // print operation
+  out.PadToColumn(indentAmount);
+  out << "DFEVar " << getVariableName(inst->getResult(0)) << " = "
+      << getVariableName(inst->getOperand(0)) << " " << opSymbol << " "
+      << getVariableName(inst->getOperand(1)) << ";\n";
+
+  return success();
 }
 
 // This will convert the underlying type wrapped in a SVar

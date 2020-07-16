@@ -66,6 +66,37 @@ static void print(OpAsmPrinter &printer, maxj::SVarOp op) {
   printer << op.getOperationName() << " : " << op.getResult().getType();
 }
 
+// ----------- SVarBinaryArithmeticOp
+
+static ParseResult parseSVarBinaryArithmeticOp(OpAsmParser &parser,
+                                               OperationState &result) {
+  SmallVector<OpAsmParser::OperandType, 2> operands;
+  llvm::SMLoc operandsLoc = parser.getCurrentLocation();
+  Type type;
+
+  // parse the operands and the type
+  if (parser.parseOperandList(operands, /*requiredOperandCount=*/2) ||
+      parser.parseOptionalAttrDict(result.attributes) ||
+      parser.parseColonType(type))
+    return failure();
+
+  if (parser.resolveOperands(operands, type, result.operands))
+    return failure();
+
+  result.addTypes(type);
+
+  return success();
+}
+
+// A generic printer for binary operations
+static void printSVarBinaryArithmeticOp(OpAsmPrinter &printer, Operation *op) {
+  printer << op->getName() << " " << op->getOperands();
+  printer.printOptionalAttrDict(op->getAttrs());
+
+  // The type of the single result.
+  printer << " : " << op->getResult(0).getType();
+}
+
 // ----------- InputOp
 static ParseResult parseInputOp(OpAsmParser &parser, OperationState &result) {
   StringAttr inputName;

@@ -9,7 +9,7 @@ include "mlir/IR/SymbolInterfaces.td"
 
 // ---------------------- MaxJ Dialect definition
 
-def MaxJDialect : Dialect {
+def MaxJ_Dialect : Dialect {
   let name = "maxj";
 
   let description = [{
@@ -29,7 +29,7 @@ include "Types.td"
 // ---------------------- MaxJ Operations
 
 class MaxJ_Op<string mnemonic, list<OpTrait> traits = []> :
-  Op<MaxJDialect, mnemonic, traits> {
+  Op<MaxJ_Dialect, mnemonic, traits> {
   // For each MaxJ op, the following static functions need to be defined in
   // MaxJOps.cc:
   //
@@ -40,7 +40,23 @@ class MaxJ_Op<string mnemonic, list<OpTrait> traits = []> :
   let printer = [{ ::print(p, *this); }];
 }
 
+// This type class corresponds to those binary arithmetic operators 
+// works between two SVar operands of the same type.
+class MaxJ_SVarBinaryArithmeticOp <string mnemonic, list<OpTrait> traits = []> :
+  Op<MaxJ_Dialect, mnemonic,
+     !listconcat(traits, [NoSideEffect, HasParent<"KernelOp">])> {
+    
+  let arguments = (ins MaxJ_AnySVarType: $lhs, MaxJ_AnySVarType: $rhs);
+  let results = (outs MaxJ_AnySVarType: $out);
+
+  let parser = [{ return ::parseSVarBinaryArithmeticOp(parser, result); }];
+
+  let printer = [{ ::printSVarBinaryArithmeticOp(p, this->getOperation()); }];
+}
+
+
 include "SVarOps.td"
+include "ArithmeticOps.td"
 include "ValueOps.td"
 include "StructureOps.td"
 include "InterfaceOps.td"
