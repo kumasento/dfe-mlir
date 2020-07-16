@@ -81,6 +81,15 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
     out << ");\n";
 
   }
+  // SVarOp
+  else if (auto op = dyn_cast<maxj::SVarOp>(inst)) {
+    out.PadToColumn(indentAmount);
+
+    out << "DFEVar " << getVariableName(inst->getResult(0)) << " = ";
+    printSVarUnderlyingType(
+        op.getResult().getType().dyn_cast<maxj::SVarType>());
+    out << ".newInstance(getOwner());\n";
+  }
   // InputOp
   else if (auto op = dyn_cast<maxj::InputOp>(inst)) {
     out.PadToColumn(indentAmount);
@@ -129,7 +138,7 @@ Twine MaxJPrinter::getVariableName(Value value) {
 // This will convert the underlying type wrapped in a SVar
 // to a DFEType in MaxJ.
 LogicalResult MaxJPrinter::printSVarUnderlyingType(maxj::SVarType svar) {
-  mlir::Type type = svar.getType();
+  mlir::Type type = svar.getUnderlyingType();
   if (type.isIntOrFloat()) {
     unsigned w = type.getIntOrFloatBitWidth();
     if (type.isInteger(w)) {

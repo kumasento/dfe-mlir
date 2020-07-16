@@ -11,7 +11,7 @@ namespace dfe {
 namespace maxj {
 
 class MaxJDialect : public Dialect {
- public:
+public:
   explicit MaxJDialect(MLIRContext *context);
 
   // the namespace prefix
@@ -37,7 +37,7 @@ enum Kinds {
 // NOTE: this is not completed yet. Should make it parametric.
 class FixType
     : public mlir::Type::TypeBase<FixType, mlir::Type, DefaultTypeStorage> {
- public:
+public:
   using Base::Base;
 
   static bool kindof(unsigned kind) { return kind == MaxJTypes::Fix; }
@@ -54,19 +54,19 @@ struct SVarTypeStorage;
 
 class SVarType : public mlir::Type::TypeBase<SVarType, mlir::Type,
                                              detail::SVarTypeStorage> {
- public:
+public:
   using Base::Base;
 
   static bool kindof(unsigned kind) { return kind == MaxJTypes::SVar; }
 
   static SVarType get(mlir::Type type);
-  mlir::Type getType();
+  mlir::Type getUnderlyingType();
 
   static llvm::StringRef getKeyword() { return "svar"; }
 };
 
-}  // namespace maxj
+} // namespace maxj
 
-}  // namespace dfe
+} // namespace dfe
 
 #endif

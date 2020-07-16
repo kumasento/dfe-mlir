@@ -1,3 +1,3 @@
-func @check_svar(%svarI1: !maxj.svar<i1>) -> () {
-  return
+maxj.kernel @check_svar() -> () {
+  %0 = maxj.svar : i1 
 }

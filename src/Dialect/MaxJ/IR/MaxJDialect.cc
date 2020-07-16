@@ -1,12 +1,12 @@
 #include "dfe/Dialect/MaxJ/IR/MaxJDialect.h"
 #include "dfe/Dialect/MaxJ/IR/MaxJOps.h"
 
-#include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/StringRef.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/DialectImplementation.h"
 #include "mlir/Transforms/InliningUtils.h"
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/StringRef.h"
 
 using namespace dfe;
 using namespace dfe::maxj;
@@ -43,26 +43,27 @@ struct SVarTypeStorage : public mlir::TypeStorage {
   }
 };
 
-}  // namespace detail
-}  // namespace maxj
-}  // namespace dfe
+} // namespace detail
+} // namespace maxj
+} // namespace dfe
 
 // ------------------------ Type parsing
 
 static Type parseSVarType(DialectAsmParser &parser) {
   Type type;
 
-  if (parser.parseLess()) return Type();
+  if (parser.parseLess())
+    return Type();
 
   llvm::SMLoc loc = parser.getCurrentLocation();
   if (parser.parseType(type)) {
-    parser.emitError(loc,
-                     "No signal type found. Signal needs an underlying "
-                     "type.");
+    parser.emitError(loc, "No signal type found. Signal needs an underlying "
+                          "type.");
     return nullptr;
   }
 
-  if (parser.parseGreater()) return Type();
+  if (parser.parseGreater())
+    return Type();
 
   return SVarType::get(type);
 }
@@ -70,15 +71,17 @@ static Type parseSVarType(DialectAsmParser &parser) {
 Type MaxJDialect::parseType(DialectAsmParser &parser) const {
   llvm::StringRef typeKeyword;
   // parse the type keyword first
-  if (parser.parseKeyword(&typeKeyword)) return Type();
-  if (typeKeyword == SVarType::getKeyword()) return parseSVarType(parser);
+  if (parser.parseKeyword(&typeKeyword))
+    return Type();
+  if (typeKeyword == SVarType::getKeyword())
+    return parseSVarType(parser);
   return Type();
 }
 
 // ------------------------ Type printing hooks
 /// type ::= !maxj.svar<type>
 static void printSVarType(SVarType svar, DialectAsmPrinter &printer) {
-  printer << svar.getKeyword() << "<" << svar.getType() << ">";
+  printer << svar.getKeyword() << "<" << svar.getUnderlyingType() << ">";
 }
 
 void MaxJDialect::printType(mlir::Type type, DialectAsmPrinter &printer) const {
@@ -97,4 +100,4 @@ SVarType SVarType::get(mlir::Type type) {
   return Base::get(type.getContext(), MaxJTypes::SVar, type);
 }
 
-mlir::Type SVarType::getType() { return getImpl()->type; }
+mlir::Type SVarType::getUnderlyingType() { return getImpl()->type; }

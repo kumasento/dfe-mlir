@@ -14,4 +14,6 @@ def MaxJ_SVarOp : MaxJ_Op<"svar", [ HasParent<"KernelOp"> ]> {
   }];
 
   let results = (outs MaxJ_AnySVarType : $result);
+
+  // NOTE: can we use the assemblyFormat to parse this svar op?
 }

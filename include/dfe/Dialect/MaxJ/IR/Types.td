@@ -7,7 +7,7 @@ def AnyFix : Type<CPred<"$_self.isa<FixType>()">, "MaxJ Fixed Point Type">,
 
 class MaxJ_SVarType<list<Type> allowedTypes>
   : ContainerType<AnyTypeOf<allowedTypes>, CPred<"$_self.isa<SVarType>()">,
-                  "$_self.cast<SVarType>().getType()", "MaxJ SVar type">;
+                  "$_self.cast<SVarType>().getUnderlyingType()", "MaxJ SVar type">;
 
 def MaxJ_AnySVarAllowedType : AnyTypeOf<[AnyInteger, AnyFloat]>;
 
