@@ -9,7 +9,12 @@ def MaxJ_InputOp : MaxJ_Op<"input", [
   let description = [{
     Equivalent to an `io.input` API.
 
+    Example:
 
+    ```mlir
+    %0 = maxj.const 1.0 : f64 -> !maxj.svar<i1>
+    %1 = maxj.input "a", %0 : !maxj.svar<i1> -> !maxj.svar<f64>
+    ```
   }];
 
   let arguments = (ins 

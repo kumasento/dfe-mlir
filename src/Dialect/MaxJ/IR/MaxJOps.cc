@@ -46,16 +46,12 @@ static ParseResult parseConstOp(OpAsmParser &parser, OperationState &result) {
 
 static void print(OpAsmPrinter &printer, maxj::ConstOp op) {
   printer << op.getOperationName() << " ";
-  printer.printAttributeWithoutType(op.valueAttr());
-  printer.printOptionalAttrDict(op.getAttrs(), {"value"});
-  printer << " : " << op.getType();
+  printer.printAttribute(op.valueAttr());
+  printer << " -> " << op.getType();
 }
 
 // ----------- InputOp
 static ParseResult parseInputOp(OpAsmParser &parser, OperationState &result) {
-  if (parser.parseOptionalLParen())
-    return failure();
-
   StringAttr inputName;
   Type resultType;
 
@@ -68,21 +64,24 @@ static ParseResult parseInputOp(OpAsmParser &parser, OperationState &result) {
     OpAsmParser::OperandType enable;
     Type enableType;
 
-    if (parser.parseOptionalRegionArgument(enable))
+    if (parser.parseOperand(enable))
       return failure();
-    if (parser.parseColonType(enableType))
-      return failure();
+    if (succeeded(parser.parseColonType(enableType))) {
+      if (!enableType.isa<maxj::SVarType>() ||
+          !enableType.dyn_cast<maxj::SVarType>().getType().isInteger(1))
+        parser.emitError(parser.getCurrentLocation(),
+                         "The 'enable' operand should be svar<i1>");
+    }
 
-    if (!enableType.isa<maxj::SVarType>() ||
-        !enableType.dyn_cast<maxj::SVarType>().getType().isInteger(1))
-      parser.emitError(parser.getCurrentLocation(),
-                       "The 'enable' operand should be svar<i1>");
+    // Update the operand to the parsing result.
+    // https://github.com/llvm/llvm-project/blob/a6d6b0ac93095571de743ea1f63f0b421687a275/mlir/examples/toy/Ch2/mlir/Dialect.cpp#L63
+    parser.resolveOperand(enable, enableType, result.operands);
   }
 
-  if (parser.parseOptionalRParen())
+  // The type of the returned value.
+  if (parser.parseArrow())
     return failure();
-
-  if (parser.parseColonType(resultType))
+  if (parser.parseType(resultType))
     return failure();
 
   return parser.addTypeToList(resultType, result.types);
@@ -90,6 +89,11 @@ static ParseResult parseInputOp(OpAsmParser &parser, OperationState &result) {
 
 static void print(OpAsmPrinter &printer, maxj::InputOp op) {
   printer << op.getOperationName();
+  printer << " \"" << op.getAttrOfType<StringAttr>("name").getValue() << "\"";
+  if (op.getNumOperands() >= 1) {
+    printer << ", " << op.getOperand(0) << " : " << op.getOperand(0).getType();
+  }
+  printer << " -> " << op.getType() << "\n";
 }
 
 // ----------- KernelOp
