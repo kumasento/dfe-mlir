@@ -50,6 +50,35 @@ static void print(OpAsmPrinter &printer, maxj::ConstOp op) {
   printer << " -> " << op.getType();
 }
 
+// ----------- CounterOp
+static ParseResult parseCounterOp(OpAsmParser &parser, OperationState &result) {
+  IntegerAttr bitWidth, wrapPoint;
+  Type type;
+
+  if (parser.parseAttribute(bitWidth, "bitWidth", result.attributes))
+    return failure();
+
+  // the wrapPoint attribute is optional
+  if (succeeded(parser.parseOptionalComma())) {
+    if (parser.parseAttribute(wrapPoint, "wrapPoint", result.attributes))
+      return failure();
+  }
+
+  if (parser.parseArrow() || parser.parseType(type))
+    return failure();
+
+  return parser.addTypeToList(type, result.types);
+}
+
+static void print(OpAsmPrinter &printer, maxj::CounterOp op) {
+  printer << op.getOperationName() << " " << op.getAttr("bitWidth");
+
+  if (op.getAttr("wrapPoint"))
+    printer << ", " << op.getAttr("wrapPoint");
+
+  printer << " -> " << op.getResult().getType();
+}
+
 // ----------- SVarOp
 static ParseResult parseSVarOp(OpAsmParser &parser, OperationState &result) {
   Type type;

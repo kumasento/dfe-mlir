@@ -43,3 +43,31 @@ def MaxJ_ConstOp : MaxJ_Op<"const", [
   // allow fold values?
   let hasFolder = 0;
 }
+
+
+def MaxJ_CounterOp : MaxJ_Op<"counter", [
+  NoSideEffect,
+  HasParent<"KernelOp">
+]> {
+  let summary = "Create a simple counter.";
+
+  let description = [{
+    `maxj.counter` creates a SVar that acts like a counter.
+
+    It is equivalent to the `control.count.simpleCounter` API.
+
+    TODO: support SVar as wrap point.
+
+    Example:
+
+    ```mlir
+    %0 = maxj.counter 1 : i64 -> !maxj.svar<i1>
+    %1 = maxj.counter 8: i32, 128: i64 -> !maxj.svar<u8>
+    ```
+  }];
+
+  let arguments = (ins
+    I64Attr : $bitWidth,
+    OptionalAttr<I64Attr>: $wrapPoint);
+  let results = (outs MaxJ_AnySVarType: $out);
+}
