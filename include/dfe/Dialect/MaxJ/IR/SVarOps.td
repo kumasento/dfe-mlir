@@ -21,7 +21,10 @@ def MaxJ_SVarOp : MaxJ_Op<"svar", [ HasParent<"KernelOp"> ]> {
 // ------------------ Stream related
 
 // TODO: is there any other trait for this Op?
-def MaxJ_OffsetOp : MaxJ_Op<"offset", [ HasParent<"KernelOp"> ]> {
+def MaxJ_OffsetOp : MaxJ_Op<"offset", [
+  NoSideEffect,
+  HasParent<"KernelOp">
+]> {
   let summary = "Create a stream offset on an SVar object";
 
   let description = [{

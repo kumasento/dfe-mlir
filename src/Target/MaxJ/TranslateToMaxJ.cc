@@ -27,6 +27,7 @@ private:
   LogicalResult printSVarBinaryArithmeticOp(Operation *op, StringRef opSymbol,
                                             unsigned indentAmount = 0);
   LogicalResult printSVarUnderlyingType(maxj::SVarType svar);
+  LogicalResult printDFEType(mlir::Type svar);
 
   llvm::formatted_raw_ostream &out;
   unsigned nextValueNum = 0;
@@ -173,11 +174,9 @@ LogicalResult MaxJPrinter::printSVarBinaryArithmeticOp(Operation *inst,
   return success();
 }
 
-// This will convert the underlying type wrapped in a SVar
-// to a DFEType in MaxJ.
-LogicalResult MaxJPrinter::printSVarUnderlyingType(maxj::SVarType svar) {
-  mlir::Type type = svar.getUnderlyingType();
+LogicalResult MaxJPrinter::printDFEType(mlir::Type type) {
   if (type.isIntOrFloat()) {
+    // for the scalar case
     unsigned w = type.getIntOrFloatBitWidth();
     if (type.isInteger(w)) {
       out << "dfeInt(" << w << ")";
@@ -186,7 +185,25 @@ LogicalResult MaxJPrinter::printSVarUnderlyingType(maxj::SVarType svar) {
     } else if (type.isF32()) {
       out << "dfeFloat(8, 23)";
     }
+    return success();
+  } else if (type.isa<mlir::VectorType>()) {
+    // for the vector case
+    auto vectorType = type.dyn_cast<mlir::VectorType>();
+
+    out << "(new DFEVectorType<DFEVar>(";
+    // resolve the DFEType construction
+    printDFEType(vectorType.getElementType());
+    out << ", " << vectorType.getNumElements() << "))";
   }
+
+  return failure();
+}
+
+// This will convert the underlying type wrapped in a SVar
+// to a DFEType in MaxJ.
+LogicalResult MaxJPrinter::printSVarUnderlyingType(maxj::SVarType svar) {
+  mlir::Type type = svar.getUnderlyingType();
+  printDFEType(type);
   return success();
 } // namespace
 
