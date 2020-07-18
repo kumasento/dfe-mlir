@@ -80,6 +80,13 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
     // print the value
     out << op.value().convertToDouble();
     out << ");\n";
+  } else if (auto op = dyn_cast<maxj::OffsetOp>(inst)) {
+    out.PadToColumn(indentAmount);
+
+    out << "DFEVar " << getVariableName(inst->getResult(0));
+    out << " = "
+        << "stream.offset(" << getVariableName(op.getOperand()) << ", "
+        << op.offset() << ");\n";
 
   } else if (auto op = dyn_cast<maxj::SVarOp>(inst)) {
     out.PadToColumn(indentAmount);

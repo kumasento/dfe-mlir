@@ -55,12 +55,14 @@ static ParseResult parseCounterOp(OpAsmParser &parser, OperationState &result) {
   IntegerAttr bitWidth, wrapPoint;
   Type type;
 
-  if (parser.parseAttribute(bitWidth, "bitWidth", result.attributes))
+  if (parser.parseAttribute(bitWidth, "bitWidth", result.attributes) ||
+      parser.parseOptionalAttrDict(result.attributes))
     return failure();
 
   // the wrapPoint attribute is optional
   if (succeeded(parser.parseOptionalComma())) {
-    if (parser.parseAttribute(wrapPoint, "wrapPoint", result.attributes))
+    if (parser.parseAttribute(wrapPoint, "wrapPoint", result.attributes) ||
+        parser.parseOptionalAttrDict(result.attributes))
       return failure();
   }
 
@@ -93,6 +95,33 @@ static ParseResult parseSVarOp(OpAsmParser &parser, OperationState &result) {
 
 static void print(OpAsmPrinter &printer, maxj::SVarOp op) {
   printer << op.getOperationName() << " : " << op.getResult().getType();
+}
+
+// ----------- OffsetOp
+static ParseResult parseOffsetOp(OpAsmParser &parser, OperationState &result) {
+  OpAsmParser::OperandType operand;
+  IntegerAttr offset;
+  Type type;
+
+  // handle the offset attribute
+  if (parser.parseAttribute(offset, "offset", result.attributes) ||
+      parser.parseOptionalAttrDict(result.attributes))
+    return failure();
+
+  // deal with the input operand
+  if (parser.parseComma() || parser.parseOperand(operand) ||
+      parser.parseColonType(type))
+    return failure();
+  parser.resolveOperand(operand, type, result.operands);
+
+  // the type of the result should be the same as the input
+  return parser.addTypeToList(type, result.types);
+}
+
+static void print(OpAsmPrinter &printer, maxj::OffsetOp op) {
+  printer << op.getOperationName() << " ";
+  printer << op.offset() << " : " << op.getAttr("offset").getType();
+  printer << " , " << op.getOperand() << " : " << op.getOperand().getType();
 }
 
 // ----------- SVarBinaryArithmeticOp
