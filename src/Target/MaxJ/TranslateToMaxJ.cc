@@ -142,7 +142,7 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
 
     out << ")";
     out << ";\n";
-  } else if (auto op = dyn_cast<maxj::MemOp>(inst)) {
+  } else if (auto op = dyn_cast<maxj::AllocOp>(inst)) {
   }
 }
 

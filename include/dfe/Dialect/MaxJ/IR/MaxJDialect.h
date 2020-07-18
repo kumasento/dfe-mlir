@@ -73,8 +73,11 @@ public:
 
   static bool kindof(unsigned kind) { return kind == MaxJTypes::Mem; }
 
-  static MemType get(SVarType svarType);
-  Type getUnderlyingType();
+  // get or create a new MemType of the given shape and element type.
+  static MemType get(ArrayRef<int64_t> shape, Type type);
+
+  Type getElementType();
+  ArrayRef<int64_t> getShape();
 
   static llvm::StringRef getKeyword() { return "mem"; }
 };

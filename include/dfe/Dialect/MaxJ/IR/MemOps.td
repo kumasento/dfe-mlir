@@ -1,6 +1,7 @@
 // Memory related operations.
 
-def MaxJ_MemOp : MaxJ_Op<"mem", [
+// TODO: figure out the traits
+def MaxJ_AllocOp : MaxJ_Op<"alloc", [
   HasParent<"KernelOp">
 ]> {
   let summary = "Allocate a memory.";
@@ -10,10 +11,9 @@ def MaxJ_MemOp : MaxJ_Op<"mem", [
     Example:
     
     ```mlir
-    %0 = maxj.mem 128: i64 -> !maxj.svar<i32>
+    %0 = maxj.alloc() : !maxj.mem<128xi32>
     ```
   }];
 
-  let arguments = (ins I64Attr : $numElements);
   let results = (outs MaxJ_AnyMemType : $output);
 }

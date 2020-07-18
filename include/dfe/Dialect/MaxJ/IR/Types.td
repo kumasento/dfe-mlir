@@ -1,3 +1,10 @@
+// class ContainerType<Type etype, Pred containerPred, code elementTypeCall,
+//                     string descr>
+// class BuildableType<code builder> {
+//   // The builder call to invoke (if specified) to construct the BuildableType.
+//   code builderCall = builder;
+// }
+
 // --------------------------- Fixed point types
 
 def AnyFix : Type<CPred<"$_self.isa<FixType>()">, "MaxJ Fixed Point Type">,
@@ -15,10 +22,11 @@ def MaxJ_AnySVarAllowedType : AnyTypeOf<[AnyInteger, AnyFloat, AnyVector]>;
 def MaxJ_AnySVarType : MaxJ_SVarType<[MaxJ_AnySVarAllowedType]>;
 
 // ---------------------------- Memory
-class MaxJ_MemType<list<Type> allowedTypes>
-  : ContainerType<AnyTypeOf<allowedTypes>, CPred<"$_self.isa<MemType>()">,
-                  "$_self.cast<MemType>().getUnderlyingType()", "MaxJ Memory type">;
 
-def MaxJ_AnyMemAllowedType : AnyTypeOf<[MaxJ_AnySVarType]>;
+def MaxJ_IsMemTypePred : CPred<"$_self.isa<MemType>()">;
 
-def MaxJ_AnyMemType : MaxJ_MemType<[MaxJ_AnyMemAllowedType]>;
+class MaxJ_MemOf<list<Type> allowedTypes>
+  : ContainerType<AnyTypeOf<allowedTypes>, MaxJ_IsMemTypePred,
+                  "$_self.cast<MemType>().getElementType()", "MaxJ Mem type">;
+
+def MaxJ_AnyMemType : MaxJ_MemOf<[MaxJ_AnySVarAllowedType]>;

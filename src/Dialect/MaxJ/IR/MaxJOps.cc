@@ -281,8 +281,22 @@ static void print(OpAsmPrinter &printer, maxj::OutputOp op) {
 }
 
 // ----------- MemOp
-static ParseResult parseMemOp(OpAsmParser &parser, OperationState &result) {}
-static void print(OpAsmPrinter &printer, maxj::MemOp op) {}
+static ParseResult parseAllocOp(OpAsmParser &parser, OperationState &result) {
+  IntegerAttr numElements;
+  Type type;
+
+  // should add a pair of bracket after the keyword
+  // there might be arguments in it
+  if (parser.parseLParen() || parser.parseRParen() ||
+      parser.parseColonType(type))
+    return failure();
+
+  return parser.addTypeToList(type, result.types);
+}
+
+static void print(OpAsmPrinter &printer, maxj::AllocOp op) {
+  printer << op.getOperationName() << "() : " << op.getResult().getType();
+}
 
 // ----------- KernelOp
 
