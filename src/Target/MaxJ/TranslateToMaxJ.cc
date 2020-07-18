@@ -143,6 +143,43 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
     out << ")";
     out << ";\n";
   } else if (auto op = dyn_cast<maxj::AllocOp>(inst)) {
+    out.PadToColumn(indentAmount);
+
+    // TODO: change DFEVar to an adapted type
+    out << "DFEVar " << getVariableName(inst->getResult(0));
+    out << " = "
+        << "mem.alloc(";
+
+    auto memTy = op.getResult().getType().dyn_cast<maxj::MemType>();
+    printDFEType(memTy.getElementType());
+    out << ", " << memTy.getShape()[0] << ");\n";
+
+  } else if (auto op = dyn_cast<maxj::ReadOp>(inst)) {
+    out.PadToColumn(indentAmount);
+
+    out << "DFEVar " << getVariableName(inst->getResult(0));
+    out << " = " << getVariableName(op.getOperand(0)) << ".read(";
+    out << getVariableName(op.getOperand(1));
+    out << ");\n";
+
+  } else if (auto op = dyn_cast<maxj::WriteOp>(inst)) {
+    out.PadToColumn(indentAmount);
+
+    out << getVariableName(op.getOperand(0)) << ".write(";
+    out << getVariableName(op.getOperand(1)) << ", ";
+    out << getVariableName(op.getOperand(2));
+
+    if (op.getNumOperands() > 3) {
+      out << ", " << getVariableName(op.getOperand(3));
+    }
+
+    out << ");\n";
+
+  } else if (auto op = dyn_cast<maxj::ConnOp>(inst)) {
+    out.PadToColumn(indentAmount);
+
+    out << getVariableName(op.getOperand(1))
+        << " <== " << getVariableName(op.getOperand(0)) << ";\n";
   }
 }
 
