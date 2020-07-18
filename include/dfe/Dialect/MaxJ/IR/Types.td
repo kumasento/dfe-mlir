@@ -12,3 +12,12 @@ class MaxJ_SVarType<list<Type> allowedTypes>
 def MaxJ_AnySVarAllowedType : AnyTypeOf<[AnyInteger, AnyFloat]>;
 
 def MaxJ_AnySVarType : MaxJ_SVarType<[MaxJ_AnySVarAllowedType]>;
+
+// ---------------------------- Memory
+class MaxJ_MemType<list<Type> allowedTypes>
+  : ContainerType<AnyTypeOf<allowedTypes>, CPred<"$_self.isa<MemType>()">,
+                  "$_self.cast<MemType>().getUnderlyingType()", "MaxJ Memory type">;
+
+def MaxJ_AnyMemAllowedType : AnyTypeOf<[MaxJ_AnySVarType]>;
+
+def MaxJ_AnyMemType : MaxJ_MemType<[MaxJ_AnyMemAllowedType]>;

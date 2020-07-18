@@ -280,6 +280,10 @@ static void print(OpAsmPrinter &printer, maxj::OutputOp op) {
   }
 }
 
+// ----------- MemOp
+static ParseResult parseMemOp(OpAsmParser &parser, OperationState &result) {}
+static void print(OpAsmPrinter &printer, maxj::MemOp op) {}
+
 // ----------- KernelOp
 
 // parse the argument list provided to a kernel.

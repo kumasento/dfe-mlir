@@ -28,6 +28,7 @@ namespace MaxJTypes {
 enum Kinds {
   Fix = mlir::Type::FIRST_PRIVATE_EXPERIMENTAL_0_TYPE,
   SVar,
+  Mem,
 };
 
 }
@@ -50,19 +51,32 @@ public:
 // ----------------------- SVar Type
 namespace detail {
 struct SVarTypeStorage;
-}
+struct MemTypeStorage;
+} // namespace detail
 
-class SVarType : public mlir::Type::TypeBase<SVarType, mlir::Type,
-                                             detail::SVarTypeStorage> {
+class SVarType
+    : public Type::TypeBase<SVarType, Type, detail::SVarTypeStorage> {
 public:
   using Base::Base;
 
   static bool kindof(unsigned kind) { return kind == MaxJTypes::SVar; }
 
-  static SVarType get(mlir::Type type);
-  mlir::Type getUnderlyingType();
+  static SVarType get(Type type);
+  Type getUnderlyingType();
 
   static llvm::StringRef getKeyword() { return "svar"; }
+};
+
+class MemType : public Type::TypeBase<MemType, Type, detail::MemTypeStorage> {
+public:
+  using Base::Base;
+
+  static bool kindof(unsigned kind) { return kind == MaxJTypes::Mem; }
+
+  static MemType get(SVarType svarType);
+  Type getUnderlyingType();
+
+  static llvm::StringRef getKeyword() { return "mem"; }
 };
 
 } // namespace maxj
