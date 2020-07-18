@@ -20,6 +20,13 @@ using namespace mlir;
 using namespace dfe;
 
 // ---------------------------  MaxJ Operations
+static ParseResult
+parseArgumentList(OpAsmParser &parser,
+                  SmallVectorImpl<OpAsmParser::OperandType> &args,
+                  SmallVectorImpl<Type> &argTypes);
+
+static void printArgumentList(OpAsmPrinter &printer,
+                              std::vector<BlockArgument> args);
 
 // ----------- ConstOp
 static ParseResult parseConstOp(OpAsmParser &parser, OperationState &result) {
@@ -280,14 +287,14 @@ static void print(OpAsmPrinter &printer, maxj::OutputOp op) {
   }
 }
 
-// ----------- MemOp
+// ----------- AllocOp
 static ParseResult parseAllocOp(OpAsmParser &parser, OperationState &result) {
   IntegerAttr numElements;
   Type type;
 
   // should add a pair of bracket after the keyword
   // there might be arguments in it
-  if (parser.parseLParen() || parser.parseRParen() ||
+  if (parser.parseOptionalLParen() || parser.parseOptionalRParen() ||
       parser.parseColonType(type))
     return failure();
 
@@ -296,6 +303,36 @@ static ParseResult parseAllocOp(OpAsmParser &parser, OperationState &result) {
 
 static void print(OpAsmPrinter &printer, maxj::AllocOp op) {
   printer << op.getOperationName() << "() : " << op.getResult().getType();
+}
+
+// ----------- ReadOp
+
+static ParseResult parseReadOp(OpAsmParser &parser, OperationState &result) {
+  OpAsmParser::OperandType mem, addr;
+  Type memTy, addrTy;
+
+  // mem operand
+  if (parser.parseOperand(mem) || parser.parseColonType(memTy))
+    return failure();
+  parser.resolveOperand(mem, memTy, result.operands);
+
+  // addr operand
+  if (parser.parseComma() || parser.parseOperand(addr) ||
+      parser.parseColonType(addrTy))
+    return failure();
+  parser.resolveOperand(addr, addrTy, result.operands);
+
+  // resolve result type
+  auto ty =
+      maxj::SVarType::get(memTy.dyn_cast<maxj::MemType>().getElementType());
+
+  return parser.addTypeToList(ty, result.types);
+}
+
+static void print(OpAsmPrinter &printer, maxj::ReadOp op) {
+  printer << op.getOperationName() << " " << op.getOperand(0) << " : "
+          << op.getOperand(0).getType() << ", " << op.getOperand(1) << " : "
+          << op.getOperand(1).getType();
 }
 
 // ----------- KernelOp
@@ -307,7 +344,7 @@ parseArgumentList(OpAsmParser &parser,
                   SmallVectorImpl<OpAsmParser::OperandType> &args,
                   SmallVectorImpl<Type> &argTypes) {
 
-  if (parser.parseLParen())
+  if (parser.parseOptionalLParen())
     return failure();
 
   do {
@@ -324,7 +361,7 @@ parseArgumentList(OpAsmParser &parser,
     }
   } while (succeeded(parser.parseOptionalComma()));
 
-  if (parser.parseRParen())
+  if (parser.parseOptionalRParen())
     return failure();
 
   return success();
