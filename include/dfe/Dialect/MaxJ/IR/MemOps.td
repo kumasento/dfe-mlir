@@ -44,3 +44,32 @@ def MaxJ_ReadOp : MaxJ_Op<"read", [
     MaxJ_AnySVarType : $addr);
   let results = (outs MaxJ_AnySVarType : $out);
 }
+
+
+// WriteOp
+def MaxJ_WriteOp : MaxJ_Op<"write", [
+  HasParent<"KernelOp">
+]> {
+  let summary = "Write value into a memory block.";
+
+  let description = [{
+    `maxj.write` writes a single SVar into a memory block.
+
+    Example:
+
+    ```mlir
+    %0 = maxj.alloc : !maxj.mem<128xi32>
+    %1 = maxj.counter 8 : i64 -> !maxj.svar<i8>
+    %2 = maxj.input "val" : !maxj.svar<i32>;
+    %3 = maxj.input "enable" : !maxj.svar<i1>;
+    maxj.write %0 : !maxj.mem<128xi32>, %1 : !maxj.svar<i8>, %2 : !maxj.svar<i32>, %3 : !maxj.svar<i1>
+    ```
+  }];
+
+  let arguments = (ins 
+    MaxJ_AnyMemType : $mem,
+    MaxJ_AnySVarType : $addr,
+    MaxJ_AnySVarType : $data,
+    Optional<MaxJ_AnySVarType> : $enable
+  );
+}

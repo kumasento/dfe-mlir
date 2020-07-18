@@ -43,3 +43,26 @@ def MaxJ_OffsetOp : MaxJ_Op<"offset", [
     MaxJ_AnySVarType : $input);
   let results = (outs MaxJ_AnySVarType : $output);
 }
+
+
+def MaxJ_ConnOp : MaxJ_Op<"conn", [
+  HasParent<"KernelOp">
+]> {
+  let summary = "Connect two SVars.";
+
+  let description = [{
+    Connect SVar A to SVar B.
+
+    Example:
+
+    ```maxj
+    %0 = maxj.svar : !maxj.svar<i32>
+    %1 = maxj.input "a" -> !maxj.svar<i32>
+    maxj.conn %1, %0 : !maxj.svar<i32>
+    ```
+  }];
+
+  let arguments = (ins
+    MaxJ_AnySVarType : $src,
+    MaxJ_AnySVarType : $dst);
+}

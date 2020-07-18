@@ -131,6 +131,27 @@ static void print(OpAsmPrinter &printer, maxj::OffsetOp op) {
   printer << " , " << op.getOperand() << " : " << op.getOperand().getType();
 }
 
+// ----------- ConnOp
+static ParseResult parseConnOp(OpAsmParser &parser, OperationState &result) {
+  OpAsmParser::OperandType src, dst;
+  Type ty;
+
+  if (parser.parseOperand(src) || parser.parseComma() ||
+      parser.parseOperand(dst) || parser.parseColonType(ty))
+    return failure();
+
+  if (parser.resolveOperand(src, ty, result.operands) ||
+      parser.resolveOperand(dst, ty, result.operands))
+    return failure();
+
+  return success();
+}
+
+static void print(OpAsmPrinter &printer, maxj::ConnOp op) {
+  printer << op.getOperationName() << " " << op.getOperand(0) << ", "
+          << op.getOperand(1) << " : " << op.getOperand(0).getType();
+}
+
 // ----------- SVarBinaryArithmeticOp
 
 static ParseResult parseSVarBinaryArithmeticOp(OpAsmParser &parser,
@@ -333,6 +354,50 @@ static void print(OpAsmPrinter &printer, maxj::ReadOp op) {
   printer << op.getOperationName() << " " << op.getOperand(0) << " : "
           << op.getOperand(0).getType() << ", " << op.getOperand(1) << " : "
           << op.getOperand(1).getType();
+}
+
+// ----------- WriteOp
+
+static ParseResult parseWriteOp(OpAsmParser &parser, OperationState &result) {
+  OpAsmParser::OperandType mem, addr, data, enable;
+  Type memTy, addrTy, dataTy, enableTy;
+
+  // mem operand
+  if (parser.parseOperand(mem) || parser.parseColonType(memTy))
+    return failure();
+  parser.resolveOperand(mem, memTy, result.operands);
+
+  // addr operand
+  if (parser.parseComma() || parser.parseOperand(addr) ||
+      parser.parseColonType(addrTy))
+    return failure();
+  parser.resolveOperand(addr, addrTy, result.operands);
+
+  // data operand
+  if (parser.parseComma() || parser.parseOperand(data) ||
+      parser.parseColonType(dataTy))
+    return failure();
+  parser.resolveOperand(data, dataTy, result.operands);
+
+  // enable operand
+  if (succeeded(parser.parseComma())) {
+    if (parser.parseOperand(enable) || parser.parseColonType(enableTy))
+      return failure();
+    parser.resolveOperand(enable, enableTy, result.operands);
+  }
+
+  return success();
+}
+
+static void print(OpAsmPrinter &printer, maxj::WriteOp op) {
+  printer << op.getOperationName() << " ";
+
+  auto ops = op.getOperands();
+  for (int i = 0; i < op.getNumOperands(); i++) {
+    printer << ops[i] << " : " << ops[i].getType();
+    if (i != op.getNumOperands() - 1)
+      printer << ", ";
+  }
 }
 
 // ----------- KernelOp
