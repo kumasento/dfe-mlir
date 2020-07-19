@@ -30,7 +30,7 @@ jobs:
       shell: bash
     - name: Cache LLVM
       id: cache-llvm
-      uses: actions/cache@v2.0.0
+      uses: actions/cache@v1
       with:
         path: lib/llvm-project
         key: ${{ runner.os }}-llvm-install-${{ steps.get-llvm-hash.outputs.hash }}
