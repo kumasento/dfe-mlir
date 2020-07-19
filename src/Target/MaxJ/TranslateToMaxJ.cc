@@ -26,7 +26,12 @@ private:
 
   LogicalResult printSVarBinaryArithmeticOp(Operation *op, StringRef opSymbol,
                                             unsigned indentAmount = 0);
+
+  // prints things like dfeInt(32), (new DFEVectorType<DFEType>(...)), ...
   LogicalResult printSVarUnderlyingType(maxj::SVarType svar);
+  // prints the type signature like DFEType, DFEVectorType<DFEVar>, etc.
+  LogicalResult printSVarTypeSignature(maxj::SVarType svar);
+
   LogicalResult printDFEType(mlir::Type svar);
 
   llvm::formatted_raw_ostream &out;
@@ -60,6 +65,10 @@ LogicalResult MaxJPrinter::printModule(mlir::ModuleOp module) {
 
     out << "}\n";
 
+    // Reset the mapping since different kernels have different scopes.
+    mapValueToName.clear();
+    nextValueNum = 0;
+
     return WalkResult::advance();
   });
 
@@ -70,7 +79,10 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
                                           unsigned indentAmount) {
   if (auto op = dyn_cast<maxj::ConstOp>(inst)) {
     out.PadToColumn(indentAmount);
-    out << "DFEVar " << getVariableName(inst->getResult(0));
+
+    printSVarTypeSignature(op.getResult().getType().dyn_cast<maxj::SVarType>());
+
+    out << " " << getVariableName(inst->getResult(0));
     out << " = ";
     out << "constant.var(";
     // print the DFEType
@@ -83,7 +95,8 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
   } else if (auto op = dyn_cast<maxj::OffsetOp>(inst)) {
     out.PadToColumn(indentAmount);
 
-    out << "DFEVar " << getVariableName(inst->getResult(0));
+    printSVarTypeSignature(op.getResult().getType().dyn_cast<maxj::SVarType>());
+    out << " " << getVariableName(inst->getResult(0));
     out << " = "
         << "stream.offset(" << getVariableName(op.getOperand()) << ", "
         << op.offset() << ");\n";
@@ -91,7 +104,9 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
   } else if (auto op = dyn_cast<maxj::SVarOp>(inst)) {
     out.PadToColumn(indentAmount);
 
-    out << "DFEVar " << getVariableName(inst->getResult(0)) << " = ";
+    printSVarTypeSignature(op.getResult().getType().dyn_cast<maxj::SVarType>());
+
+    out << " " << getVariableName(inst->getResult(0)) << " = ";
     printSVarUnderlyingType(
         op.getResult().getType().dyn_cast<maxj::SVarType>());
     out << ".newInstance(getOwner());\n";
@@ -102,7 +117,9 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
   } else if (auto op = dyn_cast<maxj::CounterOp>(inst)) {
     out.PadToColumn(indentAmount);
 
-    out << "DFEVar " << getVariableName(op.getResult()) << " = "
+    printSVarTypeSignature(op.getResult().getType().dyn_cast<maxj::SVarType>());
+
+    out << " " << getVariableName(op.getResult()) << " = "
         << "control.count.simpleCounter(" << op.bitWidth();
 
     if (op.wrapPoint().hasValue()) {
@@ -113,8 +130,9 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
   } else if (auto op = dyn_cast<maxj::InputOp>(inst)) {
     out.PadToColumn(indentAmount);
 
-    // NOTE: this should be changed if vector is supported.
-    out << "DFEVar " << getVariableName(inst->getResult(0));
+    printSVarTypeSignature(op.getResult().getType().dyn_cast<maxj::SVarType>());
+
+    out << " " << getVariableName(inst->getResult(0));
     out << " = "
         << "io.input(" << op.nameAttr() << ", ";
     printSVarUnderlyingType(
@@ -144,19 +162,26 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
   } else if (auto op = dyn_cast<maxj::AllocOp>(inst)) {
     out.PadToColumn(indentAmount);
 
-    // TODO: change DFEVar to an adapted type
-    out << "DFEVar " << getVariableName(inst->getResult(0));
+    auto memTy = op.getResult().getType().dyn_cast<maxj::MemType>();
+
+    // Looks a bit cluttered.
+    out << "Memory<";
+    printSVarTypeSignature(maxj::SVarType::get(memTy.getElementType()));
+    out << ">";
+
+    out << " " << getVariableName(inst->getResult(0));
     out << " = "
         << "mem.alloc(";
 
-    auto memTy = op.getResult().getType().dyn_cast<maxj::MemType>();
     printDFEType(memTy.getElementType());
     out << ", " << memTy.getShape()[0] << ");\n";
 
   } else if (auto op = dyn_cast<maxj::ReadOp>(inst)) {
     out.PadToColumn(indentAmount);
 
-    out << "DFEVar " << getVariableName(inst->getResult(0));
+    printSVarTypeSignature(op.getResult().getType().dyn_cast<maxj::SVarType>());
+
+    out << " " << getVariableName(inst->getResult(0));
     out << " = " << getVariableName(op.getOperand(0)) << ".read(";
     out << getVariableName(op.getOperand(1));
     out << ");\n";
@@ -204,7 +229,11 @@ LogicalResult MaxJPrinter::printSVarBinaryArithmeticOp(Operation *inst,
 
   // print operation
   out.PadToColumn(indentAmount);
-  out << "DFEVar " << getVariableName(inst->getResult(0)) << " = "
+
+  printSVarTypeSignature(
+      inst->getResult(0).getType().dyn_cast<maxj::SVarType>());
+
+  out << " " << getVariableName(inst->getResult(0)) << " = "
       << getVariableName(inst->getOperand(0)) << " " << opSymbol << " "
       << getVariableName(inst->getOperand(1)) << ";\n";
 
@@ -242,7 +271,18 @@ LogicalResult MaxJPrinter::printSVarUnderlyingType(maxj::SVarType svar) {
   mlir::Type type = svar.getUnderlyingType();
   printDFEType(type);
   return success();
-} // namespace
+}
+
+LogicalResult MaxJPrinter::printSVarTypeSignature(maxj::SVarType svar) {
+  mlir::Type type = svar.getUnderlyingType();
+
+  // TODO: needs more sanity checks here
+  if (type.isa<mlir::VectorType>()) {
+    out << "DFEVector<DFEVar>";
+  } else {
+    out << "DFEVar";
+  }
+}
 
 } // namespace
 

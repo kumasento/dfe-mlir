@@ -371,27 +371,27 @@ static ParseResult parseWriteOp(OpAsmParser &parser, OperationState &result) {
   Type memTy, addrTy, dataTy, enableTy;
 
   // mem operand
-  if (parser.parseOperand(mem) || parser.parseColonType(memTy))
+  if (parser.parseOperand(mem) || parser.parseColonType(memTy) ||
+      parser.resolveOperand(mem, memTy, result.operands))
     return failure();
-  parser.resolveOperand(mem, memTy, result.operands);
 
   // addr operand
   if (parser.parseComma() || parser.parseOperand(addr) ||
-      parser.parseColonType(addrTy))
+      parser.parseColonType(addrTy) ||
+      parser.resolveOperand(addr, addrTy, result.operands))
     return failure();
-  parser.resolveOperand(addr, addrTy, result.operands);
 
   // data operand
   if (parser.parseComma() || parser.parseOperand(data) ||
-      parser.parseColonType(dataTy))
+      parser.parseColonType(dataTy) ||
+      parser.resolveOperand(data, dataTy, result.operands))
     return failure();
-  parser.resolveOperand(data, dataTy, result.operands);
 
   // enable operand
   if (succeeded(parser.parseComma())) {
-    if (parser.parseOperand(enable) || parser.parseColonType(enableTy))
+    if (parser.parseOperand(enable) || parser.parseColonType(enableTy) ||
+        parser.resolveOperand(enable, enableTy, result.operands))
       return failure();
-    parser.resolveOperand(enable, enableTy, result.operands);
   }
 
   return success();

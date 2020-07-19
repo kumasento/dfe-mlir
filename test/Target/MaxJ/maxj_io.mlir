@@ -18,3 +18,15 @@ maxj.kernel @ScalarIO () -> () {
   // CHECK-NEXT: }
   // CHECK-NEXT: }
 }
+
+// CHECK: public class VectorIO extends Kernel {
+// CHECK-NEXT: public VectorIO(KernelParameters params) {
+// CHECK-NEXT: super(params);
+maxj.kernel @VectorIO () -> () {
+  // CHECK-NEXT: DFEVector<DFEVar> _0 = io.input("in_v0", (new DFEVectorType<DFEVar>(dfeInt(32), 8)));
+  %v0 = maxj.input "in_v0" -> !maxj.svar<vector<8xi32>>
+  // CHECK-NEXT: io.output("out_v0", _0, (new DFEVectorType<DFEVar>(dfeInt(32), 8)));
+  maxj.output "out_v0", %v0 : !maxj.svar<vector<8xi32>>
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+}
