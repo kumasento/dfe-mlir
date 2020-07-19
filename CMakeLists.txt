@@ -57,9 +57,4 @@ add_subdirectory(src)
 add_subdirectory(tools)
 
 # ---------------------------- Testing
-enable_testing()
-# Use googletest 
-add_subdirectory(lib/googletest)
-include_directories(lib/googletest/googletest/include)
-
 add_subdirectory(test)
