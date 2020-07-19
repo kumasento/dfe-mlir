@@ -1,0 +1,50 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Build and Test
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    name: Build and Test
+    
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Get dfe-mlir
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Get LLVM Hash
+      id: get-llvm-hash
+      run: echo "::set-output name=hash::$(git submodule status)"
+      shell: bash
+    - name: Cache LLVM
+      id: cache-llvm
+      uses: actions/cache@v1
+      with:
+        path: lib/llvm-project
+        key: ${{ runner.os }}-llvm-install-${{ steps.get-llvm-hash.outputs.hash }}
+    - name: Install LLVM
+      if: steps.cache-llvm.outputs.cache-hit != 'true'
+      run: |
+        mkdir lib/llvm-project/build
+        mkdir lib/llvm-project/install
+        cd lib/llvm-project/build
+        cmake ../llvm -DLLVM_BUILD_EXAMPLES=OFF -DLLVM_TARGETS_TO_BUILD="host" -DCMAKE_INSTALL_PREFIX=../install -DLLVM_ENABLE_PROJECTS='mlir' -DLLVM_OPTIMIZED_TABLEGEN=ON -DLLVM_ENABLE_OCAMLDOC=OFF -DLLVM_ENABLE_BINDINGS=OFF -DLLVM_INSTALL_UTILS=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ENABLE_TESTS=OFF -DLLVM_ENABLE_LLD=ON -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON
+        cmake --build . --target install -- -j$(nproc)
+    - name: Build and Test dfe-mlir
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Debug -DLLVM_ENABLE_ASSERTIONS=ON -DMLIR_DIR=../lib/llvm-project/install/lib/cmake/mlir/ -DLLVM_DIR=../lib/llvm-project/install/lib/cmake/llvm/ -DCMAKE_LINKER=lld -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_EXTERNAL_LIT=`pwd`/../lib/llvm-project/build/bin/llvm-lit
+        make check-circt -j$(nproc)
