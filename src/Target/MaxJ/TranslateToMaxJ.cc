@@ -45,7 +45,6 @@ LogicalResult MaxJPrinter::printModule(mlir::ModuleOp module) {
     out << "public " << kernel.getName() << "(KernelParameters params) {\n";
     out.PadToColumn(4);
     out << "super(params);\n";
-    out << "\n";
 
     // go through every operation in the block
     for (auto iter = entryBlock.begin();
