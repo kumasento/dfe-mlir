@@ -277,7 +277,7 @@ LogicalResult MaxJPrinter::printSVarTypeSignature(maxj::SVarType svar) {
   mlir::Type type = svar.getUnderlyingType();
 
   // TODO: needs more sanity checks here
-  if (type.isa<mlir::VectorType>()) {
+  if (auto ty = type.dyn_cast<mlir::VectorType>()) {
     out << "DFEVector<DFEVar>";
   } else {
     out << "DFEVar";
