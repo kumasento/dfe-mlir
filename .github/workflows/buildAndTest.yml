@@ -47,4 +47,4 @@ jobs:
         mkdir build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Debug -DLLVM_ENABLE_ASSERTIONS=ON -DMLIR_DIR=../lib/llvm-project/install/lib/cmake/mlir/ -DLLVM_DIR=../lib/llvm-project/install/lib/cmake/llvm/ -DCMAKE_LINKER=lld -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_EXTERNAL_LIT=`pwd`/../lib/llvm-project/build/bin/llvm-lit
-        make check-circt -j$(nproc)
+        make check-dfe-mlir -j$(nproc)
