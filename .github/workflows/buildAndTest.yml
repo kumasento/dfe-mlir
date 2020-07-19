@@ -26,11 +26,11 @@ jobs:
         submodules: true
     - name: Get LLVM Hash
       id: get-llvm-hash
-      run: echo "::set-output name=hash::$(git submodule status)"
+      run: echo "::set-output name=hash::$(git submodule status | awk '{print $1}')"
       shell: bash
     - name: Cache LLVM
       id: cache-llvm
-      uses: actions/cache@v1
+      uses: actions/cache@v2.0.0
       with:
         path: lib/llvm-project
         key: ${{ runner.os }}-llvm-install-${{ steps.get-llvm-hash.outputs.hash }}
