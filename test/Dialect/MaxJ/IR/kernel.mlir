@@ -5,4 +5,5 @@
 "maxj.kernel" () ({
   ^body:
     "maxj.terminator"() {} : () -> ()
+// CHECK-NEXT: }
 }) {sym_name="foo", type=()->()} : () -> ()
