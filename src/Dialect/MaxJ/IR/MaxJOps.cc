@@ -101,7 +101,13 @@ static ParseResult parseSVarOp(OpAsmParser &parser, OperationState &result) {
 }
 
 static void print(OpAsmPrinter &printer, maxj::SVarOp op) {
-  printer << op.getOperationName() << " : " << op.getResult().getType();
+  // NOTE: here we should print out the underlying type instead of the actual
+  // type, otherwise, the parser won't work properly.
+  printer << op.getOperationName() << " : "
+          << op.getResult()
+                 .getType()
+                 .dyn_cast<maxj::SVarType>()
+                 .getUnderlyingType();
 }
 
 // ----------- OffsetOp
@@ -128,7 +134,7 @@ static ParseResult parseOffsetOp(OpAsmParser &parser, OperationState &result) {
 static void print(OpAsmPrinter &printer, maxj::OffsetOp op) {
   printer << op.getOperationName() << " ";
   printer << op.offset() << " : " << op.getAttr("offset").getType();
-  printer << " , " << op.getOperand() << " : " << op.getOperand().getType();
+  printer << ", " << op.getOperand() << " : " << op.getOperand().getType();
 }
 
 // ----------- ConnOp

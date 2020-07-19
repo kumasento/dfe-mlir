@@ -1,3 +1,6 @@
+// RUN: dfe-opt %s -mlir-print-op-generic | dfe-opt | dfe-opt | FileCheck %s
+
+// CHECK: maxj.kernel @check_read () -> () {
 maxj.kernel @check_read() -> () {
   %0 = maxj.alloc() : !maxj.mem<128xi32>
   %1 = maxj.counter 8: i64 -> !maxj.svar<i8>

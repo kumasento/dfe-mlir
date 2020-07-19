@@ -1,3 +1,6 @@
+// RUN: dfe-opt %s -mlir-print-op-generic | dfe-opt | dfe-opt | FileCheck %s
+
+// CHECK: maxj.kernel @arith () -> () {
 maxj.kernel @arith() -> () {
   %0 = maxj.svar : i32
   %1 = maxj.svar : i32
