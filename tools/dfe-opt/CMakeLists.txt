@@ -2,7 +2,6 @@ set(LLVM_LINK_COMPONENTS
   Support
   )
 
-
 add_llvm_tool(dfe-opt
   dfe-opt.cc
 )

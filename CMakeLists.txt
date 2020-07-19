@@ -20,6 +20,19 @@ project (dfe-mlir
          VERSION 0.1.0
          DESCRIPTION "An experimental MLIR dialect for data-flow engine design")
 
+# Redirect llvm output
+set(LLVM_RUNTIME_OUTPUT_INTDIR ${CMAKE_BINARY_DIR}/bin)
+set(LLVM_LIBRARY_OUTPUT_INTDIR ${CMAKE_BINARY_DIR}/lib)
+set(MLIR_BINARY_DIR ${CMAKE_BINARY_DIR})
+
+# Project settings
+set(DFE_MLIR_MAIN_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include ) # --src-root
+set(DFE_MLIR_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include ) # --includedir
+
+set(DFE_MLIR_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(DFE_MLIR_BINARY_DIR ${CMAKE_BINARY_DIR}/bin)
+set(DFE_MLIR_TOOLS_DIR ${CMAKE_BINARY_DIR}/bin)
+
 # ---------------------------- C/C++ Setting
 # Using C++ 14
 set(CMAKE_CXX_STANDARD 14)
@@ -32,6 +45,7 @@ include (cmake/Macros.cmake)
 
 # ---------------------------- Dependencies
 include (cmake/LLVM.cmake) # find and include LLVM/MLIR
+
 
 # ---------------------------- Main library
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -47,3 +61,5 @@ enable_testing()
 # Use googletest 
 add_subdirectory(lib/googletest)
 include_directories(lib/googletest/googletest/include)
+
+add_subdirectory(test)

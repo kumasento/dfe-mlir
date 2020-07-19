@@ -250,7 +250,7 @@ static void print(OpAsmPrinter &printer, maxj::InputOp op) {
   if (op.getNumOperands() >= 1) {
     printer << ", " << op.getOperand(0) << " : " << op.getOperand(0).getType();
   }
-  printer << " -> " << op.getType() << "\n";
+  printer << " -> " << op.getType();
 }
 
 // ----------- OutputOp
@@ -281,12 +281,14 @@ static ParseResult parseOutputOp(OpAsmParser &parser, OperationState &result) {
     if (parser.parseOperand(enable))
       return failure();
     // check whether the SVar is a boolean
-    if (succeeded(parser.parseColonType(enableType))) {
-      if (!enableType.isa<maxj::SVarType>() ||
-          !enableType.dyn_cast<maxj::SVarType>().getUnderlyingType().isInteger(
-              1))
-        parser.emitError(parser.getCurrentLocation(),
-                         "The 'enable' operand should be svar<i1>");
+    if (parser.parseColonType(enableType))
+      return failure();
+    if (!enableType.isa<maxj::SVarType>() ||
+        !enableType.dyn_cast<maxj::SVarType>().getUnderlyingType().isInteger(
+            1)) {
+      parser.emitError(parser.getCurrentLocation(),
+                       "The 'enable' operand should be svar<i1>");
+      return failure();
     }
 
     parser.resolveOperand(enable, enableType, result.operands);
@@ -304,7 +306,7 @@ static void print(OpAsmPrinter &printer, maxj::OutputOp op) {
 
   // print the optional enable SVar
   if (op.getNumOperands() >= 1) {
-    printer << ", " << op.getOperand(1) << " : " << op.getOperand(0).getType();
+    printer << ", " << op.getOperand(1) << " : " << op.getOperand(1).getType();
   }
 }
 

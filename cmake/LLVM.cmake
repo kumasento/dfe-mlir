@@ -27,6 +27,8 @@ set(CMAKE_MODULE_PATH
 include(AddLLVM)
 include(TableGen)
 include(AddMLIR)
+include(HandleLLVMOptions)
+
 
 llvm_map_components_to_libnames(LLVM_LIBS support core irreader)
 
@@ -36,3 +38,7 @@ set(MLIR_LIBS
   MLIRParser
   MLIRSideEffectInterfaces
   MLIRTransforms)
+
+# --------------------- LIT config
+set(LIT_ARGS_DEFAULT "-sv")
+set(LLVM_LIT_ARGS "${LIT_ARGS_DEFAULT}" CACHE STRING "Default options for lit")
