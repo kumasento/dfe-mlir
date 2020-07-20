@@ -163,10 +163,11 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
     out.PadToColumn(indentAmount);
 
     auto memTy = op.getResult().getType().dyn_cast<maxj::MemType>();
+    auto svarTy = maxj::SVarType::get(memTy.getElementType());
 
     // Looks a bit cluttered.
     out << "Memory<";
-    printSVarTypeSignature(maxj::SVarType::get(memTy.getElementType()));
+    printSVarTypeSignature(svarTy);
     out << ">";
 
     out << " " << getVariableName(inst->getResult(0));
@@ -204,7 +205,12 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
 
     out << getVariableName(op.getOperand(1))
         << " <== " << getVariableName(op.getOperand(0)) << ";\n";
+  } else {
+    llvm::errs() << "Unrecognized operation\n";
+    return failure();
   }
+
+  return success();
 }
 
 Twine MaxJPrinter::getVariableName(Value value) {
@@ -251,7 +257,6 @@ LogicalResult MaxJPrinter::printDFEType(mlir::Type type) {
     } else if (type.isF32()) {
       out << "dfeFloat(8, 23)";
     }
-    return success();
   } else if (type.isa<mlir::VectorType>()) {
     // for the vector case
     auto vectorType = type.dyn_cast<mlir::VectorType>();
@@ -260,9 +265,11 @@ LogicalResult MaxJPrinter::printDFEType(mlir::Type type) {
     // resolve the DFEType construction
     printDFEType(vectorType.getElementType());
     out << ", " << vectorType.getNumElements() << "))";
+  } else {
+    return failure();
   }
 
-  return failure();
+  return success();
 }
 
 // This will convert the underlying type wrapped in a SVar
@@ -275,12 +282,14 @@ LogicalResult MaxJPrinter::printSVarUnderlyingType(maxj::SVarType svar) {
 
 LogicalResult MaxJPrinter::printSVarTypeSignature(maxj::SVarType svar) {
   mlir::Type type = svar.getUnderlyingType();
+
   // TODO: needs more sanity checks here
   if (auto ty = type.dyn_cast<mlir::VectorType>()) {
     out << "DFEVector<DFEVar>";
   } else {
     out << "DFEVar";
   }
+
   return success();
 }
 
