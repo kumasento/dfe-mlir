@@ -110,6 +110,19 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
     printSVarUnderlyingType(
         op.getResult().getType().dyn_cast<maxj::SVarType>());
     out << ".newInstance(getOwner());\n";
+
+  } else if (auto op = dyn_cast<maxj::CastOp>(inst)) {
+
+    out.PadToColumn(indentAmount);
+
+    printSVarTypeSignature(op.getResult().getType().dyn_cast<maxj::SVarType>());
+
+    out << " " << getVariableName(op.getResult()) << " = ";
+    out << getVariableName(op.getOperand()) << ".cast(";
+    printSVarUnderlyingType(
+        op.getResult().getType().dyn_cast<maxj::SVarType>());
+    out << ");\n";
+
   } else if (auto op = dyn_cast<maxj::AddOp>(inst)) {
     printSVarBinaryArithmeticOp(inst, "+", indentAmount);
   } else if (auto op = dyn_cast<maxj::MulOp>(inst)) {
