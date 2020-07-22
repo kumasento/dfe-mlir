@@ -10,7 +10,9 @@ llvm_update_compile_flags(dfe-opt)
 target_link_libraries(dfe-opt
   PRIVATE
   MLIRMaxJ
+  DFEAffineToMaxJ
 
+  MLIRAffineOps
   MLIRParser
   MLIRSupport
   MLIRIR

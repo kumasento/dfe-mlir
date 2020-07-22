@@ -1,9 +1,11 @@
+#include "dfe/Conversion/AffineToMaxJ/AffineToMaxJ.h"
 #include "dfe/Dialect/MaxJ/IR/MaxJDialect.h"
 
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/ToolOutputFile.h"
 
+#include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/AsmState.h"
@@ -62,8 +64,10 @@ int main(int argc, char *argv[]) {
 
   // register the dialects
   registerDialect<StandardOpsDialect>();
+  registerDialect<mlir::AffineDialect>();
   registerDialect<LLVM::LLVMDialect>();
   registerDialect<maxj::MaxJDialect>();
+  initAffineToMaxJPasses();
 
   // parse passes
   PassPipelineCLParser passPipeline("", "Compiler passes to run");
