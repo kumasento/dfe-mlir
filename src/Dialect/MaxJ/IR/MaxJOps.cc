@@ -30,31 +30,26 @@ static void printArgumentList(OpAsmPrinter &printer,
 
 // ----------- ConstOp
 static ParseResult parseConstOp(OpAsmParser &parser, OperationState &result) {
-  FloatAttr val;
-  Type type;
+  OpAsmParser::OperandType operand;
+  Type operandType;
+  Type resultType;
 
-  // Note that this API will parse a value without curly brackets,
-  // i.e., not a dict-type.
-  // Also, the attribute should have a colon-type attached.
-  //
-  // parseOptionalAttrDict allows you to attach some arbitrary info,
-  // but the value attribute should always be placed as <float> `:` f64
-  if (parser.parseAttribute(val, "value", result.attributes) ||
+  if (parser.parseOperand(operand) ||
       parser.parseOptionalAttrDict(result.attributes))
     return failure();
-
-  if (parser.parseArrow())
-    return failure();
-  if (parser.parseType(type))
+  if (parser.parseColonType(resultType) ||
+      parser.addTypeToList(resultType, result.types))
     return failure();
 
-  return parser.addTypeToList(type, result.types);
+  // TODO: add type check for result type
+
+  operandType = resultType.dyn_cast<maxj::SVarType>().getUnderlyingType();
+  return parser.resolveOperand(operand, operandType, result.operands);
 }
 
 static void print(OpAsmPrinter &printer, maxj::ConstOp op) {
   printer << op.getOperationName() << " ";
-  printer.printAttribute(op.valueAttr());
-  printer << " -> " << op.getType();
+  printer << op.getOperand() << " : " << op.getType();
 }
 
 // ----------- CounterOp

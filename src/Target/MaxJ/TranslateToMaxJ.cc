@@ -33,6 +33,7 @@ private:
   LogicalResult printSVarTypeSignature(maxj::SVarType svar);
 
   LogicalResult printDFEType(mlir::Type svar);
+  LogicalResult printStandardType(mlir::Type type);
 
   llvm::formatted_raw_ostream &out;
   unsigned nextValueNum = 0;
@@ -77,7 +78,15 @@ LogicalResult MaxJPrinter::printModule(mlir::ModuleOp module) {
 
 LogicalResult MaxJPrinter::printOperation(Operation *inst,
                                           unsigned indentAmount) {
-  if (auto op = dyn_cast<maxj::ConstOp>(inst)) {
+  // Standard operations
+  if (auto op = dyn_cast<mlir::ConstantOp>(inst)) {
+    out.PadToColumn(indentAmount);
+
+    printStandardType(inst->getResult(0).getType());
+    out << " " << getVariableName(inst->getResult(0));
+    out << " = " << op.getAttr("value");
+    out << ";\n";
+  } else if (auto op = dyn_cast<maxj::ConstOp>(inst)) {
     out.PadToColumn(indentAmount);
 
     printSVarTypeSignature(op.getResult().getType().dyn_cast<maxj::SVarType>());
@@ -89,8 +98,7 @@ LogicalResult MaxJPrinter::printOperation(Operation *inst,
     printSVarUnderlyingType(
         op.getResult().getType().dyn_cast<maxj::SVarType>());
     out << ", ";
-    // print the value
-    out << op.value().convertToDouble();
+    out << getVariableName(op.getOperand());
     out << ");\n";
   } else if (auto op = dyn_cast<maxj::OffsetOp>(inst)) {
     out.PadToColumn(indentAmount);
@@ -303,6 +311,26 @@ LogicalResult MaxJPrinter::printSVarTypeSignature(maxj::SVarType svar) {
     out << "DFEVar";
   }
 
+  return success();
+}
+
+LogicalResult MaxJPrinter::printStandardType(mlir::Type type) {
+  if (type.isF64()) {
+    out << "double";
+  } else if (type.isF32()) {
+    out << "float";
+  } else if (type.isInteger(32)) {
+    out << "int";
+  } else if (type.isInteger(16)) {
+    out << "short";
+  } else if (type.isInteger(8)) {
+    out << "char";
+  } else if (type.isInteger(1)) {
+    out << "bool";
+  } else {
+    llvm::errs() << "Unrecognized standard type: " << type;
+    return failure();
+  }
   return success();
 }
 

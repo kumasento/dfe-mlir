@@ -9,11 +9,13 @@ maxj.kernel @ScalarIO () -> () {
   // CHECK-NEXT: io.output("b0", _0, dfeInt(32));
   maxj.output "b0", %0 : !maxj.svar<i32>
 
-  // CHECK-NEXT: DFEVar _1 = constant.var(dfeInt(1), {{.*}});
-  %e1 = maxj.const 1. : f64 -> !maxj.svar<i1>
-  // CHECK-NEXT: DFEVar _2 = io.input("a1", dfeInt(8), _1);
+  // CHECK-NEXT: bool _1 = true;
+  %c0 = constant true
+  // CHECK-NEXT: DFEVar _2 = constant.var(dfeInt(1), _1);
+  %e1 = maxj.const %c0 : !maxj.svar<i1>
+  // CHECK-NEXT: DFEVar _3 = io.input("a1", dfeInt(8), _2);
   %1 = maxj.input "a1", %e1 : !maxj.svar<i1> -> !maxj.svar<i8>
-  // CHECK-NEXT: io.output("b1", _2, dfeInt(8), _1);
+  // CHECK-NEXT: io.output("b1", _3, dfeInt(8), _2);
   maxj.output "b1", %1 : !maxj.svar<i8>, %e1 : !maxj.svar<i1>
   // CHECK-NEXT: }
   // CHECK-NEXT: }
